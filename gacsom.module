@@ -1,0 +1,129 @@
+<?php
+ 
+//Include needed php classes 
+include_once('ClientID.inc'); 
+include_once('ViewRecord.inc');
+
+
+
+/*
+    Extracts relavent Google Analytics tracking information
+*/
+//only works if ga.js (Classic Tracking) is being used, rather than analytics.js (Universal) 
+function extract_utm_codes() {
+    $parsed_utm_tokens = new UTM($_COOKIE);
+    return $parsed_utm_tokens->getAllTokens();
+
+} 
+
+/*
+* Gets the google analytics client id
+*/ 
+function extract_client_id() {
+    $current_user = new ClientID($_COOKIE);
+    return $current_user->GetClientID();
+} 
+
+/* 
+*   Implements hook_page_alter()
+*/
+function gacsom_boot() {
+    //Make sure we are not recording multiple view hits to the database by the user refreshing the page
+    //set the cookie for one hour for the entire site
+    if(!isset($_COOKIE['_GACSOM'])) {
+        setcookie("_GACSOM", $_GET['q'], time() + (86400/12), "/");
+    }  else {
+        if (strcmp($_GET['q'], $_COOKIE['_GACSOM']) == 0) {
+            return;
+        } else {
+            setcookie("_GACSOM", $_GET['q'], time() + (86400/12), "/");
+        }
+    }
+
+    //Collect information about the current page 
+    $record = gacsom_build_record();
+
+    //save the data to the database
+    gacsom_set_record($record);
+} 
+
+//get the current time in milliseconds
+function currentTimeMillis() {
+    list($usec, $sec) = explode(" ", microtime());
+    return round(((float)$usec + (float)$sec) * 1000);
+}
+
+
+/*
+*   Build a record to be saved
+*/
+function gacsom_build_record() {
+    
+    //pull the UTM variables
+    if (isset($_GET["utm_source"])) {
+        $source = $_GET["utm_source"];
+    } else {
+        $source = '';
+    }
+
+    if (isset($_GET["utm_medium"])) {
+        $medium = $_GET["utm_medium"];
+    } else {
+        $medium = '';
+    }
+
+    if (isset($_GET["utm_campaign"])) {
+        $campaign = $_GET["utm_campaign"];  
+    } else {
+        $campaign = '';
+    }
+
+    //get the Google Analytics client id
+    $client_id = extract_client_id();
+    
+    $date = currentTimeMillis();
+
+    $url = $_GET['q'];
+    
+    $record = new ViewRecord($source, $medium, $campaign, $client_id, $date, $url);
+
+    return $record;
+}
+ 
+/*
+*	  Save a record
+*/
+function gacsom_set_record($record) {
+    $result = db_insert('gacsom')
+        ->fields(array(
+            'source' => $record->source,
+			'medium' => $record->medium,
+			'campaign' => $record->campaign,
+			'client_id' => (string) $record->client_id,
+			'url' => $record->url,
+            'time' => (string) $record->date,
+    ))
+    
+    ->execute();
+
+    return $result;
+}
+
+/*
+* implements hook_form_alter()
+*/
+//Attach to every form our custom validation handler
+function gacsom_form_alter(&$form, &$form_state, $form_id) {
+    $form['#validate'][] = 'gacsom_form_validate';
+}
+
+/*
+* implements hook_form_validate()
+*/
+//Run on every form submitted in order to capture any identifying information so to then associate 
+//with the Google Analytics client id
+function gacsom_form_validate($form_id, &$form_state) {
+    $email = $form_state["values"];
+    dpm($form_state);
+}
+

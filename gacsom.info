@@ -1,0 +1,7 @@
+name = gacsom
+description = Used for tracking view history of a client
+configure = admin/config/system/gacsom
+core = 7.x
+package = UMN
+files[] = /ClientID.php
+files[] = /ViewRecord.php

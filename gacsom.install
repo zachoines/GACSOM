@@ -1,0 +1,69 @@
+<?php
+
+/*
+ *Implement hook_schema().
+ */ 
+  
+ //Creates a database table entry to save forwarding settings
+ function gacsom_schema() {
+	 $schema = array();
+	 $schema['gacsom'] = array(
+		 'description' => 'Forwarding Configuration Settings',
+		 'fields' => array(
+			'source' => array (
+				'description' => 'campaign source',
+				'type' => 'varchar',
+				'length' => 1000,
+				'not null' => TRUE,
+				'default' => '', 
+			),
+			'medium' => array (
+				'description' => 'campaign medium',
+				'type' => 'varchar',
+				'length' => 1000,
+				'not null' => TRUE,
+				'default' => '',
+			),
+			'campaign' => array (
+				'description' => 'campaign name',
+				'type' => 'varchar',
+				'length' => 1000,
+				'not null' => TRUE,
+				'default' => '',
+			),
+			'client_id' => array (
+				'description' => 'Google Analytics Client id',
+				'type' => 'varchar',
+				'length' => 1000,
+				'not null' => TRUE,
+				'default' => '',
+			), 
+			'url' => array (
+				'description' => 'The url user visited',
+				'type' => 'varchar',
+				'length' => 1000,
+				'not null' => TRUE,
+				'default' => '',
+			),
+			'time' => array (
+				'description' => "time of view",
+				'type' => 'varchar',
+				'length' => 1000,
+				'not null' => TRUE, 
+				'default' => '', 
+			),
+		),
+	 );
+	 
+	 return $schema;
+ }
+
+ /*
+ *Implements hook_update_N().
+ */
+ 
+/*can run http://{your_site_name}/update.php to then run this update
+ function, just make sure to increase the function number by one each time you whant an update */
+function gacsom_update_7000() {
+  drupal_install_schema('gacsom');
+}
