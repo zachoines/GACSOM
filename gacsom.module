@@ -1,8 +1,9 @@
 <?php
  
 //Include needed php classes 
-include_once('ClientID.inc'); 
-include_once('ViewRecord.inc');
+include_once('classes/ClientID.inc'); 
+include_once('classes/ViewRecord.inc');
+include_once('classes/UTMQuery.inc');
 
 
 
@@ -92,7 +93,7 @@ function gacsom_build_record() {
  
 /*
 *	  Save a record
-*/
+*/ 
 function gacsom_set_record($record) {
     $result = db_insert('gacsom')
         ->fields(array(
@@ -123,7 +124,25 @@ function gacsom_form_alter(&$form, &$form_state, $form_id) {
 //Run on every form submitted in order to capture any identifying information so to then associate 
 //with the Google Analytics client id
 function gacsom_form_validate($form_id, &$form_state) {
-    $email = $form_state["values"];
-    dpm($form_state);
+    
+    
+    // $email = $form_state["values"];
+    // dpm($form_state);
 }
 
+/*
+* implements hook_additional_post_variables_alter()
+*/
+function gacsom_insert_additional_post_variables_alter(&$content) {
+    dpm("Test 1");
+    
+
+    //Grab google analytics client id and use it for a database query
+    $client_id = extract_client_id();
+    $utm_query = new UTMQuery($client_id);
+    $result = $utm_query->get_most_recent_utm_history();
+    $content = $result->fetchAll();
+    
+    //dpm($content);
+
+}

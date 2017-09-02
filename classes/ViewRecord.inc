@@ -18,6 +18,6 @@ class ViewRecord {
         $this->date = $date;
         $this->url = $url;
     }
-}
+} 
 
-?>
+?>  
