@@ -14,7 +14,6 @@ include_once('classes/UTMQuery.inc');
 function extract_utm_codes() {
     $parsed_utm_tokens = new UTM($_COOKIE);
     return $parsed_utm_tokens->getAllTokens();
-
 } 
 
 /*
@@ -25,10 +24,37 @@ function extract_client_id() {
     return $current_user->GetClientID();
 } 
 
+function check_var ($var) {
+    if(!isset($var)) {
+        return '';
+    } else {
+        return $var;
+    }
+}
+
 /* 
 *   Implements hook_page_alter()
 */
 function gacsom_boot() {
+
+    //Keep track of UTM codes on the client side for efficiency
+    if (!isset($_COOKIE["_GACSOM_UTM"])) {
+        
+        if (isset($_GET['utm_campaign'])) {
+            //save the current time and UTM values, then set the cookie for one year
+            setcookie("_GACSOM_UTM", check_var($_GET["utm_source"]).'.'.check_var($_GET["utm_medium"]).'.'.$_GET["utm_campaign"].'.'.currentTimeMillis(), time() + (126144000), "/");
+        }
+    
+    //if there is no cookie, then create one only if there is a campaign
+    } else {
+        
+        if (isset($_GET['utm_campaign'])) {
+            //if the current UTM codes are newer than what is saved in the cookie, update the cookie with the current ones.
+            setcookie("_GACSOM_UTM", check_var($_GET["utm_source"]).'.'.check_var($_GET["utm_medium"]).'.'.$_GET["utm_campaign"].'.'.currentTimeMillis(), time() + (126144000), "/");
+        }
+
+    } 
+    
     //Make sure we are not recording multiple view hits to the database by the user refreshing the page
     //set the cookie for one hour for the entire site
     if(!isset($_COOKIE['_GACSOM'])) {
@@ -134,15 +160,22 @@ function gacsom_form_validate($form_id, &$form_state) {
 * implements hook_additional_post_variables_alter()
 */
 function gacsom_insert_additional_post_variables_alter(&$content) {
-    dpm("Test 1");
-    
 
     //Grab google analytics client id and use it for a database query
     $client_id = extract_client_id();
-    $utm_query = new UTMQuery($client_id);
-    $result = $utm_query->get_most_recent_utm_history();
-    $content = $result->fetchAll();
-    
-    //dpm($content);
+
+    //For efficiency, check to see if the UTM codes are saved in the "_GACSOM_UTM" cookie, else pull from the database. 
+    if (!isset($_COOKIE["_GACSOM_UTM"])) {
+        $utm_query = new UTMQuery($client_id);
+        $result = $utm_query->get_most_recent_utm_history();
+        $content[] = $result->fetchAll();
+    } else {
+        $utm_values = $_COOKIE["_GACSOM_UTM"];
+        $values = explode('.', $utm_values);    
+        $values[] =  $client_id;
+        $content[] = $values;
+    }
+
+    dpm($content);
 
 }
