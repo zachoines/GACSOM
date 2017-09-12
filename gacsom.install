@@ -6,6 +6,7 @@
   
  //Creates a database table entry to save forwarding settings
  function gacsom_schema() {
+	 variable_set('gacsom_enable_cookies', 0);
 	 $schema = array();
 	 $schema['gacsom'] = array(
 		 'description' => 'Forwarding Configuration Settings',
@@ -22,7 +23,7 @@
 				'type' => 'varchar',
 				'length' => 1000,
 				'not null' => TRUE,
-				'default' => '',
+				'default' => '', 
 			),
 			'campaign' => array (
 				'description' => 'campaign name',

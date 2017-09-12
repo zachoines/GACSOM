@@ -4,7 +4,7 @@ class ClientID {
 
     var $client_id;
     var $ga_cookie;
-
+ 
     function __construct($cookie) {
         if (isset($cookie["_ga"])) {
             $this->ga_cookie = $cookie["_ga"];
@@ -26,4 +26,4 @@ class ClientID {
 } 
  
 
-?>
+?> 
